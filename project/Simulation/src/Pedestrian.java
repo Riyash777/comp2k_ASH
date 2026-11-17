@@ -13,14 +13,15 @@ public class Pedestrian extends Objects {
 
     private long hitTime;
 
-    public Pedestrian(
-            int x,
-            int y,
-            float radius,
-            float speed,
-            float directionRadians) {
-
+    public Pedestrian(int x, int y, float radius, float speed,
+                      float directionRadians) {
         super(x, y);
+
+        if (radius <= 0 || speed < 0) {
+            throw new IllegalArgumentException(
+                    "Radius must be positive and speed must be non-negative."
+            );
+        }
 
         this.radius = radius;
         this.speed = speed;
@@ -32,57 +33,30 @@ public class Pedestrian extends Objects {
     }
 
     public void update(double deltaSeconds) {
-
         if (hit || waiting) {
             return;
         }
 
-        x += (float) (
-                Math.cos(directionRadians)
-                        * speed
-                        * deltaSeconds
-        );
-
-        y += (float) (
-                Math.sin(directionRadians)
-                        * speed
-                        * deltaSeconds
-        );
+        x += (float) (Math.cos(directionRadians) * speed * deltaSeconds);
+        y += (float) (Math.sin(directionRadians) * speed * deltaSeconds);
     }
 
     public void draw(Graphics g) {
-
         Graphics2D g2d = (Graphics2D) g;
 
-        if (hit) {
-            g2d.setColor(Color.RED);
-        } else {
-            g2d.setColor(Color.BLUE);
-        }
+        g2d.setColor(hit ? Color.RED : Color.BLUE);
 
-        g2d.fill(
-                new Ellipse2D.Float(
-                        x - radius,
-                        y - radius,
-                        radius * 2,
-                        radius * 2
-                )
-        );
+        g2d.fill(new Ellipse2D.Float(
+                x - radius,
+                y - radius,
+                radius * 2,
+                radius * 2
+        ));
 
-        // Direction indicator
         g2d.setColor(Color.BLACK);
 
-        float endX = (float) (
-                x
-                        + Math.cos(directionRadians)
-                        * radius
-        );
-
-        float endY = (float) (
-                y
-                        + Math.sin(directionRadians)
-                        * radius
-        );
+        float endX = (float) (x + Math.cos(directionRadians) * radius);
+        float endY = (float) (y + Math.sin(directionRadians) * radius);
 
         g2d.drawLine(
                 (int) x,
@@ -109,7 +83,6 @@ public class Pedestrian extends Objects {
     }
 
     public void hit() {
-
         if (!hit) {
             hit = true;
             speed = 0;
@@ -122,16 +95,11 @@ public class Pedestrian extends Objects {
     }
 
     public boolean shouldRemove() {
-
         if (hit) {
-            return System.currentTimeMillis()
-                    - hitTime >= 2000;
+            return System.currentTimeMillis() - hitTime >= 2000;
         }
 
-        return x < -30
-                || x > 830
-                || y < -30
-                || y > 830;
+        return x < -30 || x > 830 || y < -30 || y > 830;
     }
 
     public float getRadius() {
@@ -143,6 +111,11 @@ public class Pedestrian extends Objects {
     }
 
     public void setSpeed(float speed) {
+        if (speed < 0) {
+            throw new IllegalArgumentException(
+                    "Speed must be a non-negative value."
+            );
+        }
         this.speed = speed;
     }
 

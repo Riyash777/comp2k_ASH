@@ -3,31 +3,27 @@ import javax.swing.*;
 
 public class App {
 
-    static float worldTimeElapsed = 0;
+    static double worldTimeElapsed = 0;
+    static double lastAnalyticsReportTime = 0;
     static boolean paused = false;
 
     static LightManager trafficLights;
-    static private VehicleManager vehicleManager;
-    static private PedestrianManager pedestrianManager;
+    static VehicleManager vehicleManager;
+    static PedestrianManager pedestrianManager;
 
     public static void main(String[] args) {
-
         int width = 800;
         int height = 800;
 
         trafficLights = new LightManager();
-
         vehicleManager = new VehicleManager(trafficLights);
-
         pedestrianManager = new PedestrianManager(trafficLights, vehicleManager);
 
         JFrame frame = new JFrame("Traffic Sim");
 
         JPanel panel = new JPanel() {
-
             @Override
             protected void paintComponent(Graphics g) {
-
                 super.paintComponent(g);
 
                 g.setColor(Color.GRAY);
@@ -42,7 +38,11 @@ public class App {
 
                 g.setColor(Color.BLACK);
                 g.setFont(new Font("Arial", Font.BOLD, 30));
-                g.drawString("Time elapsed: " + worldTimeElapsed / 1000 + "s", 20, 40);
+                g.drawString(
+                        "Time elapsed: "
+                                + String.format("%.1f", worldTimeElapsed / 500.0)
+                                + "s",
+                        20, 40);
 
                 vehicleManager.draw(g);
                 pedestrianManager.draw(g);
@@ -52,69 +52,63 @@ public class App {
         pauseButtonSetup(frame, panel);
 
         long[] lastTime = {System.nanoTime()};
-        long[] lastPrintedSecond = {-1};
-        long startTime = System.currentTimeMillis();
 
         Timer timer = new Timer(16, e -> {
-
             long currentTime = System.nanoTime();
 
-            double deltaTime = (currentTime - lastTime[0]) / 1_000_000_000.0;
+            double deltaTime =
+                    (currentTime - lastTime[0]) / 1_000_000_000.0;
 
             lastTime[0] = currentTime;
 
-            worldTimeElapsed = (int) (System.currentTimeMillis() - startTime);
-
-            long elapsedSeconds = (long) (worldTimeElapsed / 1000);
-            if (elapsedSeconds != lastPrintedSecond[0]) {
-                System.out.println("Vehicle count: "
-                        + vehicleManager.getVehicleCountsByDirectionDegrees());
-                lastPrintedSecond[0] = elapsedSeconds;
-            }
-
             if (paused) {
+                panel.repaint();
                 return;
             }
 
+            worldTimeElapsed += deltaTime * 500.0;
+
             vehicleManager.update(deltaTime, worldTimeElapsed);
-            trafficLights.update();
+            trafficLights.update(deltaTime);
             pedestrianManager.update(deltaTime, worldTimeElapsed);
+
+            // Week 11: print collector-based analytics every 10 seconds.
+            if (worldTimeElapsed - lastAnalyticsReportTime >= 10000) {
+                System.out.println(
+                        vehicleManager.getTrafficAnalyticsReport());
+
+                lastAnalyticsReportTime = worldTimeElapsed;
+            }
 
             panel.repaint();
         });
 
         timer.start();
 
-        frame.add(panel);
         frame.setSize(width, height);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
     public static void pauseButtonSetup(JFrame frame, JPanel panel) {
-
-        frame.add(panel);
-
         panel.setLayout(new GridBagLayout());
 
         JButton pauseButton = new JButton("Pause");
 
         pauseButton.addActionListener(e -> {
-
             paused = !paused;
-
             pauseButton.setText(paused ? "Resume" : "Pause");
-
             panel.repaint();
         });
 
         GridBagConstraints gbc = new GridBagConstraints();
-
         gbc.weightx = 1.0;
         gbc.weighty = 1.0;
         gbc.anchor = GridBagConstraints.SOUTHWEST;
         gbc.insets = new Insets(10, 10, 10, 10);
 
         panel.add(pauseButton, gbc);
+        frame.add(panel);
     }
 }

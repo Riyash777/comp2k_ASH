@@ -1,6 +1,5 @@
 public abstract class Objects {
 
-    // x y
     protected float x;
     protected float y;
 
@@ -9,7 +8,6 @@ public abstract class Objects {
         this.y = y;
     }
 
-    // get position
     public float getX() {
         return x;
     }
@@ -18,7 +16,6 @@ public abstract class Objects {
         return y;
     }
 
-    // set position
     public void setX(float x) {
         this.x = x;
     }
